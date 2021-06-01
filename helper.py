@@ -39,13 +39,19 @@ def proccess_category_url(url:str) -> int:
         category_id = int(url.split('subcategory=')[-1])
     return category_id
 
-def convert_string_to_number(string:str) -> int:
+def convert_string_to_int(string:str) -> int:
     number = 0
     if not string.isdigit():
-        unit = string[-1]
-        string = string.replace(unit, '')
+        unit = ''
+        if string[-1].isalpha():
+            unit = string[-1]
+            string = string.replace(unit, '')
+        string = string.replace('.','')
         string = string.replace(",", '.')
-        number = float(string) * conventions[unit]
+        if unit:
+            number = float(string) * conventions[unit]
+        else:
+            number = string
     else:
         number = string
     return int(number)

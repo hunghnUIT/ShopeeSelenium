@@ -12,5 +12,6 @@ CLASS_NAME_ROW_STARS = 'shopee-rating-stars__stars'
 CLASS_NAME_STAR = 'shopee-rating-stars__lit'
 CLASS_NAME_SOLD_NUMBER = 'go5yPW'
 CLASS_NAME_BUTTON_NEXT = 'shopee-icon-button--right'
+CLASS_NAME_PRICE = '_29R_un'
 MAXIMUM_PAGE_NUMBER = 100
 LOAD_ITEM_SLEEP_TIME = 0.3 # second

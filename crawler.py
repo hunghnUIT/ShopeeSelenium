@@ -20,14 +20,16 @@ from helper import (
 from controllers.item import (
     extract_data_from_category_dom_object, extract_field_from_category_dom_object
 )
+import timing_value
 
 
+timing_value.init_timing_value()
 
 driver = webdriver.Firefox()
 
 # input_url = 'https://shopee.vn/%C4%90i%E1%BB%87n-Tho%E1%BA%A1i-Ph%E1%BB%A5-Ki%E1%BB%87n-cat.84'
 # input_url = 'https://shopee.vn/Gi%C3%A1-%C4%91%E1%BB%A1-K%E1%BA%B9p-cat.84.8728?page=0&sortBy=ctime'
-input_url = 'https://shopee.vn/Gi%C3%A1-%C4%91%E1%BB%A1-K%E1%BA%B9p-cat.84.8728?locations=V%C4%A9nh%20Ph%C3%BAc&page=6&sortBy=ctime'
+input_url = 'https://shopee.vn/Gi%C3%A1-%C4%91%E1%BB%A1-K%E1%BA%B9p-cat.84.8728?locations=V%C4%A9nh%20Ph%C3%BAc&page=0&sortBy=pop'
 
 driver.get(input_url)
 
@@ -116,7 +118,6 @@ driver.quit()
 
 
 '''
-id, name, sellerId, categoryId, rating, thumbnailUrl, 
-totalReview, expired, productUrl, currentPrice,
-platform, "shopee", update, lastPriceChange
+
+platform, lastPriceChange
 '''
