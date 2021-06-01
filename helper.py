@@ -31,6 +31,8 @@ def process_item_url(url:str) -> object:
 '''
 def proccess_category_url(url:str) -> int:
     category_id = -1
+    if url.find('?') > -1:
+        url = url[0:url.find('?')]
     if '-cat.' in url:
         category_id = int(url.split('.')[-1])
     elif 'subcategory=' in url:
@@ -51,9 +53,10 @@ def convert_string_to_number(string:str) -> int:
 def calculate_rating(rates:list) -> float:
     rating = 0.0
     for rate in rates:
-        rate = rate.replace('width:', '')
-        rate = rate.replace('%;', '')
-        rating += round(float(rate.strip())/100,1)
+        star = rate.get_attribute('style')
+        star = star.replace('width:', '')
+        star = star.replace('%;', '')
+        rating += round(float(star.strip())/100,1)
     
     return rating
 
