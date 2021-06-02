@@ -8,7 +8,7 @@ from settings import (
     CLASS_NAME_STAR, CLASS_NAME_SOLD_NUMBER,
     CLASS_NAME_PRICE,
     CLASS_NAME_ITEM_NAME, CLASS_NAME_ITEM_RATING,
-    CLASS_NAME_ITEM_PRICE, CLASS_NAME_ITEM_THUMBNAIL,
+    CLASS_NAME_ITEM_PRICE, CLASS_NAME_ITEM_IMAGE,
     CLASS_NAME_ITEM_TOTAL_REVIEW,
 )
 
@@ -16,7 +16,8 @@ from settings import (
 from helper import (
     process_item_url, calculate_rating,
     convert_string_to_int, get_current_time_in_ms,
-    process_item_price
+    process_item_price, extract_background_image_url,
+    map_extract_image_url, 
 )
 
 import timing_value
@@ -82,10 +83,12 @@ def extract_data_from_item_dom_object(dom_object: object, product_url: str):
     try:
         info_from_url = process_item_url(product_url)
         rating = dom_object.find_elements_by_class_name(CLASS_NAME_ITEM_RATING)
-        sold = dom_object.find_elements_by_class_name(
+        total_review = dom_object.find_elements_by_class_name(
             CLASS_NAME_ITEM_TOTAL_REVIEW)
         item_price = dom_object.find_element_by_class_name(
             CLASS_NAME_ITEM_PRICE).text
+        images = dom_object.find_elements_by_class_name(
+            CLASS_NAME_ITEM_IMAGE)
 
         item['id'] = info_from_url['itemId']
         item['name'] = dom_object.find_element_by_css_selector(
@@ -95,12 +98,12 @@ def extract_data_from_item_dom_object(dom_object: object, product_url: str):
         item['productUrl'] = product_url
         item['rating'] = float(rating[0].text) if rating else 0.0
         item['totalReview'] = convert_string_to_int(
-            sold[0].text) if sold else 0
+            total_review[0].text) if total_review else 0
         item['update'] = get_current_time_in_ms()
         item['expired'] = timing_value.expiredTime
         item['currentPrice'] = process_item_price(item_price)
-        item['thumbnailUrl'] = dom_object.find_element_by_class_name(
-            CLASS_NAME_ITEM_THUMBNAIL).get_attribute('src')# FIXME Incorrect thumbnail
+        item['thumbnailUrl'] = extract_background_image_url(images[0])
+        item['images'] = map_extract_image_url(images)
 
         return {
             'success': True,
@@ -111,3 +114,5 @@ def extract_data_from_item_dom_object(dom_object: object, product_url: str):
             'success': False,
             'data': None,
         }
+    except Exception as err:
+        print(str(err))

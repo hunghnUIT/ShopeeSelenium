@@ -135,7 +135,7 @@ def crawl_with_item_urls(urls:List[str]):
             # for part in range(1, NUMBER_PARTS_PAGE_HEIGHT-2): # Many the first parts, the end parts include no item
             #     y = part * each_part_height
             #     driver.execute_script(f'window.scrollTo(0, {y});')
-            #     sleep(LOAD_ITEM_SLEEP_TIME)
+            sleep(LOAD_ITEM_SLEEP_TIME)
 
             result = extract_data_from_item_dom_object(driver, url)
             if result['success']:
@@ -144,5 +144,7 @@ def crawl_with_item_urls(urls:List[str]):
                 print('error')
         except TimeoutException:
             print("Loading took too much time!")
+        except Exception as err:
+            print(str(err))
 
     driver.quit()
