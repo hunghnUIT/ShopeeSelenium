@@ -12,6 +12,13 @@ CLASS_NAME_ROW_STARS = 'shopee-rating-stars__stars'
 CLASS_NAME_STAR = 'shopee-rating-stars__lit'
 CLASS_NAME_SOLD_NUMBER = 'go5yPW'
 CLASS_NAME_BUTTON_NEXT = 'shopee-icon-button--right'
-CLASS_NAME_PRICE = '_29R_un'
 MAXIMUM_PAGE_NUMBER = 100
 LOAD_ITEM_SLEEP_TIME = 0.3 # second
+
+# configs about crawling item by item detail
+CLASS_NAME_ITEM_BRIEF = 'product-briefing'
+CLASS_NAME_ITEM_PRICE = '_3e_UQT'
+CLASS_NAME_ITEM_NAME = 'attM6y'
+CLASS_NAME_ITEM_RATING = '_1mYa1t'
+CLASS_NAME_ITEM_TOTAL_REVIEW = 'OitLRu'
+CLASS_NAME_ITEM_THUMBNAIL = '_3eZSzS'

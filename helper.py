@@ -40,6 +40,7 @@ def proccess_category_url(url:str) -> int:
     return category_id
 
 def convert_string_to_int(string:str) -> int:
+    string = string.replace('₫', '')
     number = 0
     if not string.isdigit():
         unit = ''
@@ -54,7 +55,7 @@ def convert_string_to_int(string:str) -> int:
             number = string
     else:
         number = string
-    return int(number)
+    return int(number.strip())
 
 def calculate_rating(rates:list) -> float:
     rating = 0.0
@@ -69,3 +70,7 @@ def calculate_rating(rates:list) -> float:
 
 def get_current_time_in_ms() -> int:
     return round(time.time() * 1000)
+
+def process_item_price(price:str) -> int:
+    price = price.split('-')
+    return convert_string_to_int(price[0])
