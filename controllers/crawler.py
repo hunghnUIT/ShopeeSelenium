@@ -11,7 +11,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 from settings import (
     WAIT_TIME_LOAD_PAGE, NUMBER_PARTS_PAGE_HEIGHT, 
     CLASS_NAME_CARD_ITEM, MAXIMUM_PAGE_NUMBER, 
-    LOAD_ITEM_SLEEP_TIME, CLASS_NAME_ITEM_BRIEF
+    LOAD_ITEM_SLEEP_TIME, CLASS_NAME_ITEM_PRICE,
 )
 
 # Functions
@@ -127,7 +127,7 @@ def crawl_with_item_urls(urls:List[str]):
                 # driver.navigate().to(url) 
 
             myElem = WebDriverWait(driver, WAIT_TIME_LOAD_PAGE).until(
-                EC.presence_of_element_located((By.CLASS_NAME, CLASS_NAME_ITEM_BRIEF)))
+                EC.presence_of_element_located((By.CLASS_NAME, CLASS_NAME_ITEM_PRICE)))
 
             # # Scroll to deal with lazy load.
             # page_height = driver.execute_script("return document.body.scrollHeight")
@@ -135,7 +135,7 @@ def crawl_with_item_urls(urls:List[str]):
             # for part in range(1, NUMBER_PARTS_PAGE_HEIGHT-2): # Many the first parts, the end parts include no item
             #     y = part * each_part_height
             #     driver.execute_script(f'window.scrollTo(0, {y});')
-            sleep(LOAD_ITEM_SLEEP_TIME)
+            # sleep(LOAD_ITEM_SLEEP_TIME)
 
             result = extract_data_from_item_dom_object(driver, url)
             if result['success']:

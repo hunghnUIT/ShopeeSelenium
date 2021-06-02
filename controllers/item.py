@@ -109,7 +109,8 @@ def extract_data_from_item_dom_object(dom_object: object, product_url: str):
             'success': True,
             'data': item,
         }
-    except NoSuchElementException:
+    except NoSuchElementException as err:
+        print(str(err))
         return {
             'success': False,
             'data': None,
