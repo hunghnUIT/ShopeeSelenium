@@ -1,3 +1,9 @@
+# Global variable
+SHOPEE = 'shopee'
+REDIS_TRACKED_ITEMS_HASH_NAME = 'trackedItems-shopee'
+RECEIVE_NOTIFICATION_SERVICE_ADDRESS = 'http://10.255.255.8:5050/notify-for-item' # param: itemId=...., newPrice=..., platform=...
+A_DAY_IN_MS = 86400000 # = 24hrs
+
 # Settings for crawler
 TIME_BETWEEN_CRAWLING_IN_HOUR = 8
 
@@ -22,3 +28,4 @@ CLASS_NAME_ITEM_NAME = 'attM6y'
 CLASS_NAME_ITEM_RATING = '_1mYa1t'
 CLASS_NAME_ITEM_TOTAL_REVIEW = 'OitLRu'
 CLASS_NAME_ITEM_IMAGE = '_2GchKS'
+CLASS_NAME_ITEM_CATEGORY_ID = '_3YDLCj'

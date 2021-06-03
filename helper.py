@@ -62,7 +62,9 @@ def convert_string_to_int(string: str) -> int:
             number = string
     else:
         number = string
-    return int(number.strip())
+    if isinstance(number, str):
+        number = number.strip()
+    return int(number)
 
 
 def calculate_rating(rates: list) -> float:

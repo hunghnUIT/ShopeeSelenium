@@ -23,9 +23,16 @@ from controllers.item import (
     extract_data_from_item_dom_object, 
 )
 import timing_value
+from services.item import save_item_to_db
 
 
-def crawl_with_category_url(url:str):
+'''
+Function receive a category URL at a moment, start at page #1, then crawl to the last page and exit browser.
+@route      {{BASE_URL}}/crawl-category?url=https://shopee.vn/category-cat.id...
+@method     POST
+@body       None
+'''
+async def crawl_with_category_url(url:str):
     timing_value.init_timing_value()
 
     driver = webdriver.Firefox()
@@ -115,7 +122,13 @@ def crawl_with_category_url(url:str):
     driver.quit()
 
 
-def crawl_with_item_urls(urls:List[str]):
+'''
+Function receive a item URLs, crawl items one by one and quit browser.
+@route      {{BASE_URL}}/crawl-item
+@method     POST
+@body       { urls: list[str] }
+'''
+async def crawl_with_item_urls(urls:List[str]):
     timing_value.init_timing_value()
 
     driver = webdriver.Edge()
@@ -123,8 +136,6 @@ def crawl_with_item_urls(urls:List[str]):
     for url in urls:
         try:
             driver.get(url)
-            # if i != 0:
-                # driver.navigate().to(url) 
 
             myElem = WebDriverWait(driver, WAIT_TIME_LOAD_PAGE).until(
                 EC.presence_of_element_located((By.CLASS_NAME, CLASS_NAME_ITEM_PRICE)))
@@ -139,7 +150,9 @@ def crawl_with_item_urls(urls:List[str]):
 
             result = extract_data_from_item_dom_object(driver, url)
             if result['success']:
-                print(result['data'])
+                # print(result['data'])
+                print('ok')
+                await save_item_to_db(result['data'])
             else:
                 print('error')
         except TimeoutException:
