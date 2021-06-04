@@ -2,6 +2,7 @@ from config.db import col_item, col_item_price
 import timing_value
 from settings import SHOPEE, REDIS_TRACKED_ITEMS_HASH_NAME, A_DAY_IN_MS
 from services.user import notify_web_service_about_decreased_price
+from config.redis import redis_client as redis
 
 
 async def save_item(found_item, item) -> object:
@@ -22,7 +23,7 @@ async def save_item(found_item, item) -> object:
         updating_item['update'] = item['update']
         updating_item['platform'] = SHOPEE
 
-        if item['images']:
+        if 'images' in item:
             updating_item['images'] = item['images']
 
         col_item.update_one({'id': item['id']}, {'$set': updating_item})
@@ -99,13 +100,11 @@ async def save_item_to_db(item, is_flash_sale: bool = False) -> None:
             await save_item_price(item, is_flash_sale)
             #  Price is decreased?
             if found_item and found_item['currentPrice'] > item['price']:
-                print('decreased')
                 #  Check if this item being tracked by any user.
-                # is_tracked = await redis.hget(REDIS_TRACKED_ITEMS_HASH_NAME, item['id'])
-                # if is_tracked:
-                #     #  Notify to server
-                #     notify_web_service_about_decreased_price(item['id'], item['price'])
-                pass
+                is_tracked = redis.hget(REDIS_TRACKED_ITEMS_HASH_NAME, item['id'])
+                if is_tracked:
+                    #  Notify to server
+                    notify_web_service_about_decreased_price(item['id'], item['price'])
 
         # If price is changed, create a node price the day before the price is changed
         if found_item and found_item['currentPrice'] != item['price']:

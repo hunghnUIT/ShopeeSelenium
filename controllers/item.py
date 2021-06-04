@@ -1,6 +1,6 @@
-from typing import ItemsView
 from selenium.common.exceptions import NoSuchElementException
-
+from config.redis import redis_client as redis
+from config.db import col_tracked_item
 
 # Settings
 from settings import (
@@ -9,7 +9,8 @@ from settings import (
     CLASS_NAME_PRICE,
     CLASS_NAME_ITEM_NAME, CLASS_NAME_ITEM_RATING,
     CLASS_NAME_ITEM_PRICE, CLASS_NAME_ITEM_IMAGE,
-    CLASS_NAME_ITEM_TOTAL_REVIEW, CLASS_NAME_ITEM_CATEGORY_ID,
+    CLASS_NAME_ITEM_TOTAL_REVIEW, CLASS_NAME_ITEM_CATEGORY_ID, 
+    REDIS_TRACKED_ITEMS_HASH_NAME, REDIS_REPRESENTATIVE_TRUE_VALUE,
 )
 
 # Functions
@@ -120,3 +121,23 @@ def extract_data_from_item_dom_object(dom_object: object, product_url: str):
         }
     except Exception as err:
         print(str(err))
+
+
+async def store_tracked_items_to_redis():
+    # Delete the old one before update new.
+    redis.delete(REDIS_TRACKED_ITEMS_HASH_NAME)
+
+    limit = 2000
+    skip = 0
+    tracked_items = []
+    while True:
+        cursor = col_tracked_item.find({}).limit(limit).skip(skip)
+        items = await cursor.to_list(length=limit)
+        if items:
+            tracked_items += items
+            skip += limit
+        else:
+            break
+
+    for el in tracked_items:
+        redis.hset(REDIS_TRACKED_ITEMS_HASH_NAME, int(el['itemId']), REDIS_REPRESENTATIVE_TRUE_VALUE)

@@ -20,21 +20,13 @@ async def hello():
 
 @app.post('/crawl-item')
 async def crawl_each_item(body: ListUrlRequestBody) -> None:
-    loop = asyncio.get_event_loop()
-    task = asyncio.ensure_future(crawl_with_item_urls(body.urls))
-    response = loop.run_until_complete(task)
-    print(response)
-    loop.close()
+    await crawl_with_item_urls(body.urls)
     return 'processing...'
 
 
 @app.post('/crawl-category')
 async def crawl_category(body: UrlRequestBody) -> None:
-    loop = asyncio.get_event_loop()
-    task = asyncio.ensure_future(crawl_with_category_url(body.url))
-    response = loop.run_until_complete(task)
-    print(response)
-    loop.close()
+    await crawl_with_category_url(body.url)
     return 'processing...'
 
 @app.get('/1')

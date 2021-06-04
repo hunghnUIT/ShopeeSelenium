@@ -20,7 +20,7 @@ from helper import (
 )
 from controllers.item import (
     extract_data_from_category_dom_object, extract_field_from_category_dom_object,
-    extract_data_from_item_dom_object, 
+    extract_data_from_item_dom_object, store_tracked_items_to_redis
 )
 import timing_value
 from services.item import save_item_to_db
@@ -34,8 +34,9 @@ Function receive a category URL at a moment, start at page #1, then crawl to the
 '''
 async def crawl_with_category_url(url:str):
     timing_value.init_timing_value()
+    await store_tracked_items_to_redis()
 
-    driver = webdriver.Firefox()
+    driver = webdriver.Edge()
     driver.get(url)
 
     category_id = proccess_category_url(url)
@@ -78,6 +79,7 @@ async def crawl_with_category_url(url:str):
                     else:
                         count += 1
                         # print(result['data'])
+                        await save_item_to_db(result['data'])
 
             # Format "list_items_failed": [{idx: 1, item_info: {item}}, {idx: 6, item_info: {item}}]
             if list_items_failed:
@@ -92,12 +94,14 @@ async def crawl_with_category_url(url:str):
                                 if result:
                                     item_info['thumbnailUrl'] = result
                                     # print(item_info)
+                                    await save_item_to_db(item_info)
                                     count += 1
                                     del list_items_failed[i]
                         else: # entire item failed
                             result = extract_data_from_category_dom_object(dom_object, category_id)
                             if result['success']:
                                 # print(result['data'])
+                                await save_item_to_db(result['data'])
                                 count += 1
                                 del list_items_failed[i]
 
@@ -105,6 +109,7 @@ async def crawl_with_category_url(url:str):
 
         except TimeoutException:
             print("Loading took too much time!")
+            items = []
 
         print(f'Done crawling page #{page}. Total item: {count}') # page start from 1
         page += 1
@@ -130,6 +135,7 @@ Function receive a item URLs, crawl items one by one and quit browser.
 '''
 async def crawl_with_item_urls(urls:List[str]):
     timing_value.init_timing_value()
+    await store_tracked_items_to_redis()
 
     driver = webdriver.Edge()
 

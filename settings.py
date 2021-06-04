@@ -3,6 +3,7 @@ SHOPEE = 'shopee'
 REDIS_TRACKED_ITEMS_HASH_NAME = 'trackedItems-shopee'
 RECEIVE_NOTIFICATION_SERVICE_ADDRESS = 'http://10.255.255.8:5050/notify-for-item' # param: itemId=...., newPrice=..., platform=...
 A_DAY_IN_MS = 86400000 # = 24hrs
+REDIS_REPRESENTATIVE_TRUE_VALUE = 1
 
 # Settings for crawler
 TIME_BETWEEN_CRAWLING_IN_HOUR = 8

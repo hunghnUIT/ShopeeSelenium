@@ -6,3 +6,5 @@ db_shopee = client['SHOPEE']
 col_item = db_shopee['ItemsShopee']
 col_item_price = db_shopee['ItemPriceShopee']
 
+db_user = client['USER']
+col_tracked_item = db_user['TrackedItemsShopee']
