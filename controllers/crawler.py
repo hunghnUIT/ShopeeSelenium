@@ -2,9 +2,12 @@ from time import sleep
 from typing import List
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
+from msedge.selenium_tools import Edge, EdgeOptions
+from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 
 # Settings
@@ -12,6 +15,7 @@ from settings import (
     WAIT_TIME_LOAD_PAGE, NUMBER_PARTS_PAGE_HEIGHT, 
     CLASS_NAME_CARD_ITEM, MAXIMUM_PAGE_NUMBER, 
     LOAD_ITEM_SLEEP_TIME, CLASS_NAME_ITEM_PRICE,
+    HEADLESS, FIREFOX_PROFILE
 )
 
 # Functions
@@ -36,7 +40,22 @@ async def crawl_with_category_url(url:str):
     timing_value.init_timing_value()
     await store_tracked_items_to_redis()
 
-    driver = webdriver.Edge()
+    # options = EdgeOptions()
+    # options.use_chromium = True
+    # options.add_argument("headless")
+    # options.add_argument("disable-gpu")
+
+    # driver = Edge(options=options)
+
+    options = Options()
+    if HEADLESS:
+        options.headless = True
+        options.add_argument('--disable-gpu')
+        options.add_argument('--disable-extensions')
+
+    driver = webdriver.Firefox(options=options, firefox_profile=FIREFOX_PROFILE)
+
+    # driver = webdriver.Edge() # Uncomment this to use none headless browser
     driver.get(url)
 
     category_id = proccess_category_url(url)
@@ -54,11 +73,9 @@ async def crawl_with_category_url(url:str):
                 EC.presence_of_element_located((By.CLASS_NAME, CLASS_NAME_CARD_ITEM)))
             
             # Scroll to deal with lazy load.
-            page_height = driver.execute_script("return document.body.scrollHeight")
-            each_part_height = page_height//NUMBER_PARTS_PAGE_HEIGHT
-            for part in range(1, NUMBER_PARTS_PAGE_HEIGHT-2): # Many the first parts, the end parts include no item
-                y = part * each_part_height
-                driver.execute_script(f'window.scrollTo(0, {y});')
+            actions = ActionChains(driver)
+            for _ in range(8): # space 8 times = heigh of the document
+                actions.send_keys(Keys.SPACE).perform()
                 sleep(LOAD_ITEM_SLEEP_TIME)
 
             # query all items
@@ -137,8 +154,11 @@ async def crawl_with_item_urls(urls:List[str]):
     timing_value.init_timing_value()
     await store_tracked_items_to_redis()
 
-    driver = webdriver.Edge()
+    options = Options()
+    if HEADLESS:
+        options.headless = True
 
+    driver = webdriver.Firefox(options=options, firefox_profile=FIREFOX_PROFILE)
     for url in urls:
         try:
             driver.get(url)
@@ -157,7 +177,7 @@ async def crawl_with_item_urls(urls:List[str]):
             result = extract_data_from_item_dom_object(driver, url)
             if result['success']:
                 # print(result['data'])
-                print('ok')
+                # print('ok')
                 await save_item_to_db(result['data'])
             else:
                 print('error')
