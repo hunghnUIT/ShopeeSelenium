@@ -33,11 +33,9 @@ def process_item_url(url: str) -> object:
 '''
 **@return** int number which is current category id 
 '''
-
-
 def proccess_category_url(url: str) -> int:
     category_id = -1
-    if url.find('?') > -1:
+    if url.find('?') > -1 and 'search' not in url:
         url = url[0:url.find('?')]
     if '-cat.' in url:
         category_id = int(url.split('.')[-1])
