@@ -1,8 +1,8 @@
+from queue import Queue
 from time import sleep
 from typing import List
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
-from msedge.selenium_tools import Edge, EdgeOptions
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
@@ -36,26 +36,21 @@ Function receive a category URL at a moment, start at page #1, then crawl to the
 @method     POST
 @body       None
 '''
-def crawl_with_category_url(url:str):
+def crawl_with_category_url(url:str, jobs_queue: Queue, driver: webdriver = None, is_in_recursive: bool = False):
     timing_value.init_timing_value()
-    store_tracked_items_to_redis()
 
-    # options = EdgeOptions()
-    # options.use_chromium = True
-    # options.add_argument("headless")
-    # options.add_argument("disable-gpu")
+    if not is_in_recursive: # Not in recursive => This function was called the first time to do crawling job.
+        store_tracked_items_to_redis()
 
-    # driver = Edge(options=options)
+    if not driver:
+        options = Options()
+        if HEADLESS:
+            options.headless = True
+            options.add_argument('--disable-gpu')
+            options.add_argument('--disable-extensions')
 
-    options = Options()
-    if HEADLESS:
-        options.headless = True
-        options.add_argument('--disable-gpu')
-        options.add_argument('--disable-extensions')
+        driver = webdriver.Firefox(options=options, firefox_profile=FIREFOX_PROFILE)
 
-    driver = webdriver.Firefox(options=options, firefox_profile=FIREFOX_PROFILE)
-
-    # driver = webdriver.Edge() # Uncomment this to use none headless browser
     driver.get(url)
 
     category_id = proccess_category_url(url)
@@ -128,7 +123,7 @@ def crawl_with_category_url(url:str):
             print("Loading took too much time!")
             items = []
 
-        print(f'Done crawling page #{page}. Total item: {count}') # page start from 1
+        print(f'Done crawling page #{page} of category {category_id}. Total item: {count}') # page start from 1
         page += 1
 
         if page <= MAXIMUM_PAGE_NUMBER:
@@ -141,8 +136,35 @@ def crawl_with_category_url(url:str):
             print(f'Done crawling category {category_id}, last page: {page - 1}') # start from 1
             break
 
-    driver.quit()
+    if not jobs_queue.empty():
+        url_from_queue = jobs_queue.get()
 
+        crawl_with_category_url(
+            url=url_from_queue, jobs_queue=jobs_queue, driver=driver, is_in_recursive=True)
+
+    if not is_in_recursive: # Not in recursive, can safely quit browser after all task queue is done
+        driver.quit()
+
+
+def loop_items(driver, urls):
+    for url in urls:
+        try:
+            driver.get(url)
+
+            myElem = WebDriverWait(driver, WAIT_TIME_LOAD_PAGE).until(
+                EC.presence_of_element_located((By.CLASS_NAME, CLASS_NAME_ITEM_PRICE)))
+
+            result = extract_data_from_item_dom_object(driver, url)
+            if result and result['success']:
+                # print(result['data'])
+                # print('ok')
+                save_item_to_db(result['data'])
+            else:
+                print('error')
+        except TimeoutException:
+            print("Loading took too much time!")
+        except Exception as err:
+            print(str(err))
 
 '''
 Function receive a item URLs, crawl items one by one and quit browser.
@@ -150,7 +172,7 @@ Function receive a item URLs, crawl items one by one and quit browser.
 @method     POST
 @body       { urls: list[str] }
 '''
-def crawl_with_item_urls(urls:List[str]):
+def crawl_with_item_urls(urls:List[str], jobs_queue: Queue):
     timing_value.init_timing_value()
     store_tracked_items_to_redis()
 
@@ -159,31 +181,11 @@ def crawl_with_item_urls(urls:List[str]):
         options.headless = True
 
     driver = webdriver.Firefox(options=options, firefox_profile=FIREFOX_PROFILE)
-    for url in urls:
-        try:
-            driver.get(url)
+    loop_items(driver, urls)
 
-            myElem = WebDriverWait(driver, WAIT_TIME_LOAD_PAGE).until(
-                EC.presence_of_element_located((By.CLASS_NAME, CLASS_NAME_ITEM_PRICE)))
+    while not jobs_queue.empty():
+        urls_from_queue = jobs_queue.get()
 
-            # # Scroll to deal with lazy load.
-            # page_height = driver.execute_script("return document.body.scrollHeight")
-            # each_part_height = page_height//NUMBER_PARTS_PAGE_HEIGHT
-            # for part in range(1, NUMBER_PARTS_PAGE_HEIGHT-2): # Many the first parts, the end parts include no item
-            #     y = part * each_part_height
-            #     driver.execute_script(f'window.scrollTo(0, {y});')
-            # sleep(LOAD_ITEM_SLEEP_TIME)
-
-            result = extract_data_from_item_dom_object(driver, url)
-            if result['success']:
-                # print(result['data'])
-                print('ok')
-                save_item_to_db(result['data'])
-            else:
-                print('error')
-        except TimeoutException:
-            print("Loading took too much time!")
-        except Exception as err:
-            print(str(err))
+        loop_items(driver, urls_from_queue)
 
     driver.quit()
