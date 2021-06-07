@@ -123,7 +123,7 @@ def extract_data_from_item_dom_object(dom_object: object, product_url: str):
         print(str(err))
 
 
-async def store_tracked_items_to_redis():
+def store_tracked_items_to_redis():
     # Delete the old one before update new.
     redis.delete(REDIS_TRACKED_ITEMS_HASH_NAME)
 
@@ -131,8 +131,7 @@ async def store_tracked_items_to_redis():
     skip = 0
     tracked_items = []
     while True:
-        cursor = col_tracked_item.find({}).limit(limit).skip(skip)
-        items = await cursor.to_list(length=limit)
+        items = list(col_tracked_item.find().limit(limit).skip(skip))
         if items:
             tracked_items += items
             skip += limit

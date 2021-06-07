@@ -36,9 +36,9 @@ Function receive a category URL at a moment, start at page #1, then crawl to the
 @method     POST
 @body       None
 '''
-async def crawl_with_category_url(url:str):
+def crawl_with_category_url(url:str):
     timing_value.init_timing_value()
-    await store_tracked_items_to_redis()
+    store_tracked_items_to_redis()
 
     # options = EdgeOptions()
     # options.use_chromium = True
@@ -96,7 +96,7 @@ async def crawl_with_category_url(url:str):
                     else:
                         count += 1
                         # print(result['data'])
-                        await save_item_to_db(result['data'])
+                        save_item_to_db(result['data'])
 
             # Format "list_items_failed": [{idx: 1, item_info: {item}}, {idx: 6, item_info: {item}}]
             if list_items_failed:
@@ -111,14 +111,14 @@ async def crawl_with_category_url(url:str):
                                 if result:
                                     item_info['thumbnailUrl'] = result
                                     # print(item_info)
-                                    await save_item_to_db(item_info)
+                                    save_item_to_db(item_info)
                                     count += 1
                                     del list_items_failed[i]
                         else: # entire item failed
                             result = extract_data_from_category_dom_object(dom_object, category_id)
                             if result['success']:
                                 # print(result['data'])
-                                await save_item_to_db(result['data'])
+                                save_item_to_db(result['data'])
                                 count += 1
                                 del list_items_failed[i]
 
@@ -150,9 +150,9 @@ Function receive a item URLs, crawl items one by one and quit browser.
 @method     POST
 @body       { urls: list[str] }
 '''
-async def crawl_with_item_urls(urls:List[str]):
+def crawl_with_item_urls(urls:List[str]):
     timing_value.init_timing_value()
-    await store_tracked_items_to_redis()
+    store_tracked_items_to_redis()
 
     options = Options()
     if HEADLESS:
@@ -177,8 +177,8 @@ async def crawl_with_item_urls(urls:List[str]):
             result = extract_data_from_item_dom_object(driver, url)
             if result['success']:
                 # print(result['data'])
-                # print('ok')
-                await save_item_to_db(result['data'])
+                print('ok')
+                save_item_to_db(result['data'])
             else:
                 print('error')
         except TimeoutException:
