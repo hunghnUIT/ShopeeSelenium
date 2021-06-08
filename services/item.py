@@ -84,7 +84,11 @@ def create_item_price_day_before(item) -> None:
             # Not item['price'] because passed item is item in DB.
             'price': item['currentPrice'],
             'update': item['update'] - A_DAY_IN_MS,
-            'priceChangeInDay': [{'price': item['currentPrice'], 'update': item['update'], 'isFlashSale': False}]
+            'priceChangeInDay': [
+                {'price': item['currentPrice'], 
+                'update': item['update'] - A_DAY_IN_MS, 
+                'isFlashSale': False
+                }]
         })
 
 
