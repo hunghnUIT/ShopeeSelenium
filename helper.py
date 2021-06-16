@@ -39,6 +39,8 @@ def proccess_category_url(url: str) -> int:
         url = url[0:url.find('?')]
     if '-cat.' in url:
         category_id = int(url.split('.')[-1])
+    elif 'realCategoryId' in url:
+        category_id = int(url.split('realCategoryId=')[-1])
     elif 'subcategory=' in url:
         category_id = int(url.split('subcategory=')[-1])
     return category_id

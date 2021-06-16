@@ -6,16 +6,18 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
+import threading
 
 # Settings
 from settings import (
-    WAIT_TIME_LOAD_PAGE, NUMBER_PARTS_PAGE_HEIGHT, 
+    SHOPEE_URL, WAIT_TIME_LOAD_PAGE, NUMBER_PARTS_PAGE_HEIGHT, 
     CLASS_NAME_CARD_ITEM, MAXIMUM_PAGE_NUMBER, 
     LOAD_ITEM_SLEEP_TIME, CLASS_NAME_ITEM_PRICE,
-    HEADLESS, FIREFOX_PROFILE
+    HEADLESS, FIREFOX_PROFILE, ALLOWED_CATEGORIES_TO_CRAWL, 
+    WILL_CRAWL_ALL_CATEGORIES, MAX_THREAD_NUMBER_FOR_CATEGORY,
 )
 
 # Functions
@@ -28,6 +30,7 @@ from controllers.item import (
 )
 import timing_value
 from services.item import save_item_to_db
+from config.db import col_category
 
 
 '''
@@ -59,6 +62,7 @@ def crawl_with_category_url(url:str, jobs_queue: Queue, driver: webdriver = None
     last_page_item_number = 0
     count = 0 # temp
 
+    print(f'Start to crawl category ID: {category_id}')
     while True:
         # Format: [{idx: 1, item_info: {item}}, {idx: 6, item_info: {item}}]
         list_items_failed = []
@@ -68,9 +72,8 @@ def crawl_with_category_url(url:str, jobs_queue: Queue, driver: webdriver = None
                 EC.presence_of_element_located((By.CLASS_NAME, CLASS_NAME_CARD_ITEM)))
             
             # Scroll to deal with lazy load.
-            actions = ActionChains(driver)
             for _ in range(8): # space 8 times = heigh of the document
-                actions.send_keys(Keys.SPACE).perform()
+                ActionChains(driver).send_keys(Keys.SPACE).perform()
                 sleep(LOAD_ITEM_SLEEP_TIME)
 
             # query all items
@@ -127,10 +130,33 @@ def crawl_with_category_url(url:str, jobs_queue: Queue, driver: webdriver = None
         page += 1
 
         if page <= MAXIMUM_PAGE_NUMBER:
-            next_page_button = driver.find_element_by_class_name('shopee-icon-button--right')
-            driver.execute_script("arguments[0].scrollIntoView();", next_page_button)
-            ActionChains(driver).click(next_page_button).perform()
-            last_page_item_number = len(items)
+            try_again_to_find_next_button = False
+
+            try:
+                next_page_button = driver.find_element_by_class_name('shopee-icon-button--right')
+                driver.execute_script("arguments[0].scrollIntoView();", next_page_button)
+                # ActionChains(driver).click(next_page_button).perform()
+                next_page_button.click()
+                last_page_item_number = len(items)
+            except NoSuchElementException:
+                print('Not found next button. Trying again.')
+                try_again_to_find_next_button = True
+
+            if try_again_to_find_next_button:
+                actions = ActionChains(driver)
+                actions.send_keys(Keys.HOME).perform()
+                for _ in range(8):
+                    actions.send_keys(Keys.SPACE).perform()
+                
+                try:
+                    next_page_button = driver.find_element_by_class_name('shopee-icon-button--right')
+                    driver.execute_script("arguments[0].scrollIntoView();", next_page_button)
+                    next_page_button.click()
+                    last_page_item_number = len(items)
+                except NoSuchElementException:
+                    print('Still not found next button. Crawl next category.')
+                    break
+
             # continue # this is unnecessary
         else:
             print(f'Done crawling category {category_id}, last page: {page - 1}') # start from 1
@@ -189,3 +215,21 @@ def crawl_with_item_urls(urls:List[str], jobs_queue: Queue):
         loop_items(driver, urls_from_queue)
 
     driver.quit()
+
+
+def crawl_all_items(start_index, queue, thread_count_at_start):
+    timing_value.init_timing_value()
+    store_tracked_items_to_redis()
+
+    cates = list(col_category.find())
+
+    for idx, cate in enumerate(cates):
+        if (cate['rootId'] in ALLOWED_CATEGORIES_TO_CRAWL or WILL_CRAWL_ALL_CATEGORIES) and idx >= start_index:
+            url = f'{SHOPEE_URL}/{cate["categoryUrl"]}&realCategoryId={cate["id"]}'
+
+            thread_allowed_left = threading.active_count() - thread_count_at_start - 1  # 1 is thread using for calling this function, I guess
+
+            if thread_allowed_left < MAX_THREAD_NUMBER_FOR_CATEGORY:
+                (threading.Thread(target=crawl_with_category_url, args=[url, queue, None])).start()
+            else:
+                queue.put(url)

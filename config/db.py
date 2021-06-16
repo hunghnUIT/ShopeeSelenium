@@ -10,6 +10,7 @@ try:
     db_shopee = client['SHOPEE']
     col_item = db_shopee['ItemsShopee']
     col_item_price = db_shopee['ItemPriceShopee']
+    col_category = db_shopee['CategoriesShopee']
     db_user = client['USER']
     col_tracked_item = db_user['TrackedItemsShopee']
 except Exception:
