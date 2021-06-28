@@ -18,6 +18,7 @@ from settings import (
     LOAD_ITEM_SLEEP_TIME, CLASS_NAME_ITEM_PRICE,
     HEADLESS, FIREFOX_PROFILE, ALLOWED_CATEGORIES_TO_CRAWL, 
     WILL_CRAWL_ALL_CATEGORIES, MAX_THREAD_NUMBER_FOR_CATEGORY,
+    CLASS_NAME_BUTTON_NEXT,
 )
 
 # Functions
@@ -69,7 +70,7 @@ def crawl_with_category_url(url:str, jobs_queue: Queue, driver: webdriver = None
 
         try:
             myElem = WebDriverWait(driver, WAIT_TIME_LOAD_PAGE).until(
-                EC.presence_of_element_located((By.CLASS_NAME, CLASS_NAME_CARD_ITEM)))
+                EC.presence_of_element_located((By.CSS_SELECTOR, CLASS_NAME_CARD_ITEM)))
             
             # Scroll to deal with lazy load.
             for _ in range(8): # space 8 times = heigh of the document
@@ -77,7 +78,7 @@ def crawl_with_category_url(url:str, jobs_queue: Queue, driver: webdriver = None
                 sleep(LOAD_ITEM_SLEEP_TIME)
 
             # query all items
-            items = driver.find_elements_by_class_name(CLASS_NAME_CARD_ITEM)
+            items = driver.find_elements_by_css_selector(CLASS_NAME_CARD_ITEM)
 
             if len(items) == last_page_item_number and last_page_item_number < 50:
                 print(f'Done crawling category {category_id}, last page: {page - 1}') # start from 1
@@ -133,7 +134,7 @@ def crawl_with_category_url(url:str, jobs_queue: Queue, driver: webdriver = None
             try_again_to_find_next_button = False
 
             try:
-                next_page_button = driver.find_element_by_class_name('shopee-icon-button--right')
+                next_page_button = driver.find_element_by_css_selector(CLASS_NAME_BUTTON_NEXT)
                 driver.execute_script("arguments[0].scrollIntoView();", next_page_button)
                 # ActionChains(driver).click(next_page_button).perform()
                 next_page_button.click()
@@ -149,7 +150,7 @@ def crawl_with_category_url(url:str, jobs_queue: Queue, driver: webdriver = None
                     actions.send_keys(Keys.SPACE).perform()
                 
                 try:
-                    next_page_button = driver.find_element_by_class_name('shopee-icon-button--right')
+                    next_page_button = driver.find_element_by_css_selector(CLASS_NAME_BUTTON_NEXT)
                     driver.execute_script("arguments[0].scrollIntoView();", next_page_button)
                     next_page_button.click()
                     last_page_item_number = len(items)
@@ -178,7 +179,7 @@ def loop_items(driver, urls):
             driver.get(url)
 
             myElem = WebDriverWait(driver, WAIT_TIME_LOAD_PAGE).until(
-                EC.presence_of_element_located((By.CLASS_NAME, CLASS_NAME_ITEM_PRICE)))
+                EC.presence_of_element_located((By.CSS_SELECTOR, CLASS_NAME_ITEM_PRICE)))
 
             result = extract_data_from_item_dom_object(driver, url)
             if result and result['success']:

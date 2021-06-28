@@ -25,18 +25,18 @@ import timing_value
 
 
 def extract_data_from_category_dom_object(dom_object: object, category_id: int) -> object:
-    item = {}  # FIXME change to model later.
+    item = {}
     try:
         product_url = dom_object.find_element_by_tag_name(
             'a').get_attribute('href')
         info_from_url = process_item_url(product_url)
         stars = dom_object.find_elements_by_css_selector(
-            f'.{CLASS_NAME_ROW_STARS} .{CLASS_NAME_STAR}')
-        sold = dom_object.find_element_by_class_name(
+            f'{CLASS_NAME_ROW_STARS} {CLASS_NAME_STAR}')
+        sold = dom_object.find_element_by_css_selector(
             CLASS_NAME_SOLD_NUMBER).text
 
         item['id'] = info_from_url['itemId']
-        item['name'] = dom_object.find_element_by_class_name(
+        item['name'] = dom_object.find_element_by_css_selector(
             CLASS_NAME_NAME_ITEM).text
         item['sellerId'] = info_from_url['sellerId']
         item['categoryId'] = category_id
@@ -47,7 +47,7 @@ def extract_data_from_category_dom_object(dom_object: object, category_id: int) 
         item['update'] = get_current_time_in_ms()
         item['expired'] = timing_value.expiredTime
         item['price'] = convert_string_to_int(
-            dom_object.find_element_by_class_name(CLASS_NAME_PRICE).text)
+            dom_object.find_element_by_css_selector(CLASS_NAME_PRICE).text)
         item['thumbnailUrl'] = dom_object.find_element_by_tag_name(
             'img').get_attribute('src')
         if not item['thumbnailUrl']:
@@ -76,29 +76,31 @@ def extract_field_from_category_dom_object(key: str, dom_object: object) -> any:
 
 
 def extract_data_from_item_dom_object(dom_object: object, product_url: str):
-    item = {}  # FIXME change to model later.
+    item = {}
     try:
         info_from_url = process_item_url(product_url)
-        rating = dom_object.find_elements_by_class_name(CLASS_NAME_ITEM_RATING)
-        total_review = dom_object.find_elements_by_class_name(
+        rating = dom_object.find_elements_by_css_selector(CLASS_NAME_ITEM_RATING)
+        total_review = dom_object.find_elements_by_css_selector(
             CLASS_NAME_ITEM_TOTAL_REVIEW)
-        item_price = dom_object.find_element_by_class_name(
+        item_price = dom_object.find_element_by_css_selector(
             CLASS_NAME_ITEM_PRICE).text
-        images = dom_object.find_elements_by_class_name(
+        images = dom_object.find_elements_by_css_selector(
             CLASS_NAME_ITEM_IMAGE)
-        category_ids = dom_object.find_elements_by_class_name(
-            CLASS_NAME_ITEM_CATEGORY_ID)
-        href = category_ids[len(category_ids) - 1].get_attribute('href') if category_ids[len(category_ids) - 1] else ''
-        splitted_href = href.split('.') if href else []
-        category_id = 0
-        if splitted_href:
-            category_id = splitted_href[len(splitted_href) - 1]
+
+        # Update 28/6/2021: Shopee remove category ID from item detail, can not find any way to get this so categoryId won't be update anymore with item detail
+        # category_ids = dom_object.find_elements_by_css_selector(
+            # CLASS_NAME_ITEM_CATEGORY_ID)
+        # href = category_ids[len(category_ids) - 1].get_attribute('href') if category_ids[len(category_ids) - 1] else ''
+        # splitted_href = href.split('.') if href else []
+        # category_id = 0
+        # if splitted_href:
+            # category_id = splitted_href[len(splitted_href) - 1]
 
         item['id'] = info_from_url['itemId']
         item['name'] = dom_object.find_element_by_css_selector(
-            f'.{CLASS_NAME_ITEM_NAME} span').text
+            CLASS_NAME_ITEM_NAME).text
         item['sellerId'] = info_from_url['sellerId']
-        item['categoryId'] = int(category_id)
+        # item['categoryId'] = int(category_id)
         item['productUrl'] = product_url
         item['rating'] = float(rating[0].text) if rating else 0.0
         item['totalReview'] = convert_string_to_int(
