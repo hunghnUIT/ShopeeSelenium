@@ -17,7 +17,10 @@ def save_item(found_item, item) -> object:
         updating_item['productUrl'] = item['productUrl']
         updating_item['rating'] = item['rating']
         updating_item['totalReview'] = item['totalReview']
-        updating_item['thumbnailUrl'] = item['thumbnailUrl']
+
+        if 'thumbnailUrl' in item:
+            updating_item['thumbnailUrl'] = item['thumbnailUrl']
+
         updating_item['expired'] = timing_value.expiredTime
         updating_item['currentPrice'] = item['price']
         updating_item['update'] = item['update']

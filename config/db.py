@@ -13,5 +13,7 @@ try:
     col_category = db_shopee['CategoriesShopee']
     db_user = client['USER']
     col_tracked_item = db_user['TrackedItemsShopee']
+    db_server = client['SERVER']
+    col_config = db_server['Configs']
 except Exception:
     print("Unable to connect to the server.")

@@ -1,3 +1,7 @@
+CRAWLER_ID = '00'
+CRAWLER_NAME = f'shopee_html_crawler_{CRAWLER_ID}'
+
+from services.config import get_config
 #region Firefox Profile
 from selenium import webdriver
 firefox_profile = webdriver.FirefoxProfile()
@@ -37,16 +41,15 @@ firefox_profile.set_preference("plugin.default_plugin_disabled", False)
 #endregion
 
 # Global variable
-CRAWLER_ID = '00'
 SHOPEE = 'shopee'
 REDIS_TRACKED_ITEMS_HASH_NAME = 'trackedItems-shopee'
 RECEIVE_NOTIFICATION_SERVICE_ADDRESS = 'http://10.255.255.8:5050/notify-for-item' # param: itemId=...., newPrice=..., platform=...
 A_DAY_IN_MS = 86400000 # = 24hrs
 REDIS_REPRESENTATIVE_TRUE_VALUE = 1
-HEADLESS = True
+HEADLESS = eval((get_config('headless', 'true')).title())
 FIREFOX_PROFILE = firefox_profile
-MAX_THREAD_NUMBER_FOR_ITEM = 2
-MAX_THREAD_NUMBER_FOR_CATEGORY = 5
+MAX_THREAD_NUMBER_FOR_ITEM = int(get_config('max_thread_number_for_item', '2'))
+MAX_THREAD_NUMBER_FOR_CATEGORY = int(get_config('max_thread_number_for_category', '5'))
 
 # After receiving crawling message
 ALLOWED_CATEGORIES_TO_CRAWL = {
@@ -56,27 +59,27 @@ WILL_CRAWL_ALL_CATEGORIES = False
 SHOPEE_URL = 'https://shopee.vn'
 
 # Settings for crawler
-TIME_BETWEEN_CRAWLING_IN_HOUR = 8
+TIME_BETWEEN_CRAWLING_IN_HOUR = int(get_config('time_between_crawling_in_hour', '8'))
 
-WAIT_TIME_LOAD_PAGE = 3 # seconds
+WAIT_TIME_LOAD_PAGE = int(get_config('wait_time_load_page', '3')) # seconds
 NUMBER_PARTS_PAGE_HEIGHT = 7 # Assuming an page have this number of part corresponding to its height 
 
 # configs about crawling items by category
-CLASS_NAME_CARD_ITEM = '.shopee-search-item-result__item' # card component contains all item's info
-CLASS_NAME_NAME_ITEM = '._36CEnF'
-CLASS_NAME_PRICE = '._29R_un' # string 5.800.000 
-CLASS_NAME_ROW_STARS = '.shopee-rating-stars__stars'
-CLASS_NAME_STAR = '.shopee-rating-stars__lit'
-CLASS_NAME_SOLD_NUMBER = '.go5yPW'
-CLASS_NAME_BUTTON_NEXT = '.shopee-icon-button--right'
+CLASS_NAME_CARD_ITEM = get_config('class_name_card_item', '.shopee-search-item-result__item') # card component contains all item's info
+CLASS_NAME_NAME_ITEM = get_config('class_name_name_item', '._36CEnF')
+CLASS_NAME_PRICE = get_config('class_name_price', '._29R_un') # string 5.800.000 
+CLASS_NAME_ROW_STARS = get_config('class_name_row_stars', '.shopee-rating-stars__stars')
+CLASS_NAME_STAR = get_config('class_name_star', '.shopee-rating-stars__lit')
+CLASS_NAME_SOLD_NUMBER = get_config('class_name_sold_number', '.go5yPW')
+CLASS_NAME_BUTTON_NEXT = get_config('class_name_button_next', '.shopee-icon-button--right')
 MAXIMUM_PAGE_NUMBER = 100
 LOAD_ITEM_SLEEP_TIME = 0.3 # second
 
 # configs about crawling item by item detail
-CLASS_NAME_ITEM_BRIEF = 'product-briefing'
-CLASS_NAME_ITEM_PRICE = '._3e_UQT'
-CLASS_NAME_ITEM_NAME = '.attM6y span'
-CLASS_NAME_ITEM_RATING = '._1mYa1t'
-CLASS_NAME_ITEM_TOTAL_REVIEW = '.OitLRu'
-CLASS_NAME_ITEM_IMAGE = '._2GchKS'
-CLASS_NAME_ITEM_CATEGORY_ID = '._3YDLCj'
+CLASS_NAME_ITEM_BRIEF = get_config('class_name_item_brief', 'product-briefing')
+CLASS_NAME_ITEM_PRICE = get_config('class_name_item_price', '._3e_UQT') 
+CLASS_NAME_ITEM_NAME = get_config('class_name_item_name', '.attM6y span') 
+CLASS_NAME_ITEM_RATING = get_config('class_name_item_rating', '._1mYa1t') 
+CLASS_NAME_ITEM_TOTAL_REVIEW = get_config('class_name_item_total_review', '.OitLRu') 
+CLASS_NAME_ITEM_IMAGE = get_config('class_name_item_image', '._2GchKS') 
+CLASS_NAME_ITEM_CATEGORY_ID = get_config('class_name_item_category_id', '._3YDLCj') 

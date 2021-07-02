@@ -108,8 +108,11 @@ def extract_data_from_item_dom_object(dom_object: object, product_url: str):
         item['update'] = get_current_time_in_ms()
         item['expired'] = timing_value.expiredTime
         item['price'] = process_item_price(item_price)
-        item['thumbnailUrl'] = extract_background_image_url(images[0])
-        item['images'] = map_extract_image_url(images)
+        if images:
+            item['thumbnailUrl'] = extract_background_image_url(images[0])
+            item['images'] = map_extract_image_url(images)
+        else:
+            print('Can not get images')
 
         return {
             'success': True,
