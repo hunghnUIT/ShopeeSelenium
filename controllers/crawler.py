@@ -10,9 +10,13 @@ from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 import threading
+import pymongo
+import time
 
 # Settings
 from settings import (
+    CLASS_NAME_ITEM_NOT_EXIST,
+    MAX_THREAD_NUMBER_FOR_ITEM,
     SHOPEE_URL, WAIT_TIME_LOAD_PAGE, NUMBER_PARTS_PAGE_HEIGHT, 
     CLASS_NAME_CARD_ITEM, MAXIMUM_PAGE_NUMBER, 
     LOAD_ITEM_SLEEP_TIME, CLASS_NAME_ITEM_PRICE,
@@ -23,7 +27,9 @@ from settings import (
 
 # Functions
 from helper import ( 
+    process_item_url,
     proccess_category_url,
+    to_human_readable_time_format,
 )
 from controllers.item import (
     extract_data_from_category_dom_object, extract_field_from_category_dom_object,
@@ -31,7 +37,7 @@ from controllers.item import (
 )
 import timing_value
 from services.item import save_item_to_db
-from config.db import col_category
+from config.db import col_category, col_item, col_item_price
 
 
 '''
@@ -173,7 +179,8 @@ def crawl_with_category_url(url:str, jobs_queue: Queue, driver: webdriver = None
         driver.quit()
 
 
-def loop_items(driver, urls):
+def loop_items(driver, urls: List[str]):
+    start_time = time.time()
     for url in urls:
         try:
             driver.get(url)
@@ -189,9 +196,19 @@ def loop_items(driver, urls):
             else:
                 print('error')
         except TimeoutException:
-            print("Loading took too much time!")
+            # After waiting for CLASS_NAME_ITEM_PRICE, certainly page is done and show 404 error on title
+            if driver.find_elements_by_css_selector(CLASS_NAME_ITEM_NOT_EXIST):
+                itemId = (process_item_url(url))['itemId']
+                print(f'Item having url {itemId} is not found. Deleting it and its prices')
+                col_item.delete_one({'id': itemId})
+                del_count = col_item_price.delete_many({'itemId': itemId})
+                print(f'Deleted {del_count.deleted_count} prices')
+            else:
+                print("Loading took too much time!")
         except Exception as err:
             print(str(err))
+    execution_time = time.time() - start_time
+    print(f'Done get {len(urls)} item(s) in {to_human_readable_time_format(execution_time)}')
 
 '''
 Function receive a item URLs, crawl items one by one and quit browser.
@@ -206,6 +223,8 @@ def crawl_with_item_urls(urls:List[str], jobs_queue: Queue):
     options = Options()
     if HEADLESS:
         options.headless = True
+        options.add_argument('--disable-gpu')
+        options.add_argument('--disable-extensions')
 
     driver = webdriver.Firefox(options=options, firefox_profile=FIREFOX_PROFILE)
     loop_items(driver, urls)
@@ -228,9 +247,52 @@ def crawl_all_items(start_index, queue, thread_count_at_start):
         if (cate['rootId'] in ALLOWED_CATEGORIES_TO_CRAWL or WILL_CRAWL_ALL_CATEGORIES) and idx >= start_index:
             url = f'{SHOPEE_URL}/{cate["categoryUrl"]}&realCategoryId={cate["id"]}'
 
-            thread_allowed_left = threading.active_count() - thread_count_at_start - 1  # 1 is thread using for calling this function, I guess
+            thread_allowed_used = threading.active_count() - thread_count_at_start - 1  # 1 is thread using for calling this function, I guess
 
-            if thread_allowed_left < MAX_THREAD_NUMBER_FOR_CATEGORY:
+            if thread_allowed_used < MAX_THREAD_NUMBER_FOR_CATEGORY:
                 (threading.Thread(target=crawl_with_category_url, args=[url, queue, None])).start()
             else:
                 queue.put(url)
+
+def renew_ignored_items(queue, thread_count_at_start):
+    timing_value.init_timing_value()
+    store_tracked_items_to_redis()
+
+    list_items = []
+    step = 50 # each thread will crawl 100 items at once.
+    skip = 0
+    count = 0
+
+    while True:
+        list_items = list(col_item.find({ 'expired': {'$lt': timing_value.expiredTime } }).limit(step).skip(skip).sort('update', pymongo.ASCENDING))
+
+        if list_items:
+            ln = len(list_items)
+
+            list_urls = []
+
+            for item in list_items:
+                if 'productUrl' in item:
+                    list_urls.append(item['productUrl'])
+
+            thread_allowed_used = threading.active_count() - thread_count_at_start - 1  # 1 is thread using for calling this function, I guess
+
+            if thread_allowed_used < MAX_THREAD_NUMBER_FOR_ITEM:
+                print(f'Got {ln} items, about to update theme.')
+                (threading.Thread(target=crawl_with_item_urls, args=[list_urls, queue])).start()
+            else:
+                # print(f'Put {ln} items to queue.')
+                queue.put(list_urls)
+            
+            count += ln
+            # we don't wait for finishing renew this process to start another one
+            # So that I need to skip += step to renew or put to queue next 100 item
+            skip += step 
+        elif not list_items and skip != 0:
+            # if skip number is 10 and updated 10 items, then keep increasing skip to 20, crawler will actually crawl from index 20 (skip) + 10 (updated)
+            # change skip to 0 for restarting from the begin again for sure.
+            skip = 0
+        else:
+            break
+            
+    return count

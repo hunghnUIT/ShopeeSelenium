@@ -5,7 +5,7 @@ from queue import Queue
 from fastapi import FastAPI
 from models.request_body import UrlRequestBody, ListUrlRequestBody
 
-from controllers.crawler import crawl_with_item_urls, crawl_with_category_url, crawl_all_items
+from controllers.crawler import crawl_with_item_urls, crawl_with_category_url, crawl_all_items, renew_ignored_items
 
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
@@ -43,6 +43,11 @@ async def crawl_category(body: UrlRequestBody) -> None:
 @app.post('/crawl-all-items')
 def get_all_categories(start_index: int= 0):
     crawl_all_items(start_index, jobs_category, THREAD_COUNT_AT_START)
+    return 'processing...'
+
+@app.post('/renew-ignored-items')
+def renew_items():
+    renew_ignored_items(jobs_item, THREAD_COUNT_AT_START)
     return 'processing...'
 
 @app.get('/check')
